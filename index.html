@@ -15,15 +15,6 @@
 		<link rel="icon" href="favicon.png" type="image/png">
 		
 		<script src="dist/vendor/js/platform.js"></script>
-				
-		<script src="dist/vendor/js/modernizr-2.6.2.min.js"></script>
-		<script src="dist/vendor/js/angular.min.js"></script>
-		<script src="dist/vendor/js/angular-route.min.js"></script>
-		<script src="dist/vendor/js/angular-animate.min.js"></script>
-		<script src="dist/vendor/js/svg.min.js"></script>
-		<script src="dist/vendor/js/jquery.min.js"></script>
-		
-		<script src="dist/js/app.js"></script>
 		
 		<script>
 			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -48,7 +39,7 @@
 		<!-- Main CSS -->
 		<link rel="stylesheet" type="text/css" href="dist/css/app.css">
 	</head>
-	<body ng-controller="MainController" ng-class="pageId" touch-action="auto" port-background ng-cloak>
+	<body ng-controller="MainController" ng-class="pageId" touch-action="auto" port-background ng-cloak unresolved>
 		<div id="wrapper">
 			<nav ng-controller="MenuController" id="menu">
 				<ul horizontal layout around-justified>
@@ -69,5 +60,14 @@
 				Built with AngularJS and Google Polymer.
 			</div>
 		</div>
+						
+		<script src="dist/vendor/js/modernizr-2.6.2.min.js"></script>
+		<script src="dist/vendor/js/angular.min.js"></script>
+		<script src="dist/vendor/js/angular-route.min.js"></script>
+		<script src="dist/vendor/js/angular-animate.min.js"></script>
+		<script src="dist/vendor/js/svg.min.js"></script>
+		<script src="dist/vendor/js/jquery.min.js"></script>
+		
+		<script src="dist/js/app.js"></script>
 	</body>
 </html>
