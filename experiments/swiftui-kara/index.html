@@ -161,7 +161,7 @@
 		</section>
 		
 		<section id="swiftui-kara-wrapper">
-			<swiftui-kara videoId="m2-kJau6dVs">
+			<swiftui-kara audioSrcType="audio" audioSrc="santa-claus-is-coming-to-town.mp3">
 				<swiftui-karatext start="0:0:8" end="0:0:15">.....................</swiftui-karatext>
 				<swiftui-karatext start="0:0:15" end="0:0:16.7">You'd better watch out!</swiftui-karatext>
 				<swiftui-karatext start="0:0:16.7" end="0:0:18.3">You'd better not cry!</swiftui-karatext>
@@ -271,18 +271,18 @@
 			/* Control the progress bar */
 			window.addEventListener("kara-playing", function() {
 				timeProgress.setAttribute("max", swiftUIKara.getDuration());
-				durationSpan.innerHTML = swiftUIKara.getFormattedDuration();
+				durationSpan.innerHTML = toHHMMSS(swiftUIKara.getDuration());
 
 				timeProgressTimer = window.setInterval(
 					function() {
 						timeProgress.setAttribute("value", swiftUIKara.getCurrentPlayTime());
-						currentTimeSpan.innerHTML = swiftUIKara.getFormattedCurrentPlayTime();
+						currentTimeSpan.innerHTML = toHHMMSS(swiftUIKara.getCurrentPlayTime());
 					}, 1000);
 			});
 
 			window.addEventListener("kara-ended", function() {
 				timeProgress.setAttribute("value", swiftUIKara.getDuration());
-				currentTimeSpan.innerHTML = swiftUIKara.getFormattedDuration();
+				currentTimeSpan.innerHTML = toHHMMSS(swiftUIKara.getDuration());
 				controlBtn.switchState("pause", "play");
 				window.clearInterval(timeProgressTimer);
 			});
@@ -298,6 +298,30 @@
 					}
 				}
 			}
+						
+			/* The function is excerpt from google-youtube */
+			function toHHMMSS(totalSec) {
+				var hours = Math.floor(totalSec / 3600);
+				totalSec -= hours * 3600;
+				var minutes = Math.floor(totalSec / 60);
+				var seconds = Math.round(totalSec - (minutes * 60));
+
+				var hourPortion = '';
+				if (hours > 0) {
+					hourPortion += hours + ':';
+
+					if (minutes < 10) {
+						minutes = '0' + minutes;
+					}
+				}
+
+				if (seconds < 10) {
+					seconds = '0' + seconds;
+				}
+
+				return hourPortion + minutes + ':' + seconds;
+			}
+			
 		</script>
 	</body>
 </html>
