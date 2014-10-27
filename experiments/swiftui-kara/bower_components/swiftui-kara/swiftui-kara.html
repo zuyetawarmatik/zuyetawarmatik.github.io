@@ -2,7 +2,7 @@
 <link rel="import" href="../google-youtube/google-youtube.html">
 <link rel="import" href="swiftui-karatext.html">
 
-<polymer-element name="swiftui-kara" attributes="flyDuration videoId">
+<polymer-element name="swiftui-kara" attributes="flyDuration audioSrcType audioSrc">
 	<template>
 		<style>
 			:host {
@@ -12,37 +12,42 @@
 				text-align: center;
 			}
 		</style>
-		<google-youtube id="youtube" videoid="{{videoId}}" height="0px" width="0px" chromeless="true"></google-youtube>
+		<template if="{{audioSrcType=='youtube'}}">
+			<google-youtube id="youtube" videoid="{{audioSrc}}" height="0px" width="0px" chromeless="true"></google-youtube>
+		</template>
+		<template if="{{audioSrcType=='audio'}}">
+			<audio id="audio" preload="auto"></audio>
+		</template>
 		<content></content>
-  </template>
-	
+	</template>
+
 	<script>
 		(function() {
 			var KARA_FULL_READY = 2;
-			
+
 			var STATE_KARA_NOT_READY = -1;
 			var STATE_KARA_READY = 0;
 			var STATE_KARA_PLAYING = 1;
 			var STATE_KARA_PAUSED = 2;
 			var STATE_KARA_ENDED = 3;
-			
+
 			/* User action and state:
 			/* User action (play, pause) -> kara's public function -> youtube's state changed ->
 			/* kara's state changed -> kara's private function -> kara fires event -> user agent listens event */
-			
+
 			Polymer({
 				state: STATE_KARA_NOT_READY,
-				
+
 				_karaReadyLevel: 0,
-				
+
 				/* Registering and event functions */
 				/* ====================== */
-				
+
 				_karaReadyLevelChanged: function() {
 					if (this._karaReadyLevel == KARA_FULL_READY)
 						this.state = STATE_KARA_READY;
 				},
-				
+
 				stateChanged: function() {
 					if (this.state == STATE_KARA_READY) {
 						this.fire("kara-ready");
@@ -59,7 +64,7 @@
 						this.fire("kara-playing");
 					}
 				},
-				
+
 				registerKaratext: function(childKaratext) {
 					this._childrenKaratext.push(childKaratext);
 					if (this._childrenKaratext.length == this._numberOfKaratext) {
@@ -68,75 +73,144 @@
 						this.parentNode.setAttribute("layout", "");
 						this.parentNode.setAttribute("center", "");
 						this.parentNode.setAttribute("center-justified", "");
-						
+
 						this.async(function() {
 							this._karaReadyLevel++;
 						});
 					}
 				},
-				
+
 				/* ====================== */
-				
-				
-				
+
+
+
 				/* Properties functions */
 				/* ====================== */
+
+				/* seconds */
 				getCurrentPlayTime: function() {
-					return this.$.youtube.currenttime;
+					return this._player.getCurrentPlayTime();
 				},
-				
+
+				/* seconds */
 				getDuration: function() {
-					return this.$.youtube.duration;
+					return this._player.getDuration();
 				},
-				
-				getFormattedCurrentPlayTime: function() {
-					return this.$.youtube.currenttimeformatted;
-				},
-				
-				getFormattedDuration: function() {
-					return this.$.youtube.durationformatted;
-				},
-				
+
 				/* ====================== */
-				
-				
-				
+
+
+
+				/* Player object */
+				/* ====================== */
+
+				_getPlayer: function() {
+					var Player;
+					var thisEl = this;
+
+					switch (this.audioSrcType) {
+						case "youtube":
+							Player = function() {
+								var youtube = this.playerElmt = thisEl.$.youtube;
+
+								this.playerType = "youtube";
+
+								this.play = function() {
+									youtube.play();
+								};
+
+								this.pause = function() {
+									youtube.pause();
+								};
+
+								this.seekTo = function(s) {
+									youtube.seekTo(s);
+								};
+
+								this.getCurrentPlayTime = function() {
+									return youtube.currenttime;
+								};
+
+								this.getDuration = function() {
+									return youtube.duration;
+								};
+
+								this.getState = function() {
+									return youtube.state;
+								};
+							};
+
+							break;
+						case "audio":
+							Player = function() {
+								var audio = this.playerElmt = thisEl.$.audio;
+
+								this.playerType = "audio";
+
+								this.play = function() {
+									audio.play();
+								};
+
+								this.pause = function() {
+									audio.pause();
+								};
+
+								this.seekTo = function(s) {
+									audio.currentTime = s;
+								};
+
+								this.getCurrentPlayTime = function() {
+									return audio.currentTime;
+								};
+
+								this.getDuration = function() {
+									return audio.duration;
+								};
+							};
+							break;
+					}
+
+					return new Player();
+				},
+
+
 				/* Controlling functions */
 				/* ====================== */
+
 				pause: function() {
-					this.$.youtube.pause();
+					this._player.pause();
 				},
-				
+
 				play: function() {				
-					this.$.youtube.seekTo(this._currentTime / 1000);
-					this.$.youtube.play();
+					this._player.seekTo(this._currentTime / 1000);
+					this._player.play();
 				},
-							
+
 				_endJobs: function() {
 					for (var i = 0; i < this._childrenKaratext.length; i++)
 						this._childrenKaratext[i].reset();
-					
+
 					this._currentTime = 0;
 					this._currentKaratextId = 0;
 				},
-				
+
 				_pauseJobs: function() {
 					var currentId = this._currentKaratextId;
 					var currentTime = this._currentTime;
-					
+
 					/* Cancel children timers */
 					if (this._currentKaratextId >= 1)
 						this._childrenKaratext[currentId - 1].stop();
 					if (this._currentKaratextId >= 2)
 						this._childrenKaratext[currentId - 2].stop();
-					
+
 					/* Find the suitable back-target karatext */
 					currentId -= 2;
 
 					this._currentTime = currentId > 0 ? this._childrenKaratext[currentId - 1].startTime : 0;
 					this._currentKaratextId = currentId >= 0 ? currentId : 0;
 				},
-				
+
 				_playTimer: function() {
 					this._timer = window.setInterval(function() {
 						if (this._currentKaratextId < this._childrenKaratext.length) {
@@ -156,49 +230,93 @@
 						this._currentTime += this._timerInterval;
 					}.bind(this), 100);
 				},
-				
+
 				/* ====================== */
-				
-				
-				
+
+
+
 				/* Polymer lifecycle functions */
 				/* ====================== */
-				
+
 				publish: {
 					flyDuration: 400
 				},
-				
+
 				created: function() {
 					this._childrenKaratext = [];
-					
+
 					this._currentTime = 0;
 					this._timerInterval = 100;
 					this._currentKaratextId = 0;
 				},
 				
+				ready: function() {
+					/* Because we cannot bind input attribute directly to src of <audio>,
+					/* we need to bind it manually here */
+					if (this.audioSrcType == "audio")
+						this.$.audio.src = this.audioSrc;
+				},
+
 				domReady: function() {
 					this._numberOfKaratext = this.querySelectorAll("swiftui-karatext").length;
-					
-					this.addEventListener("google-youtube-ready", function() {
-						this.async(function() {
-							this._karaReadyLevel++;
-						});
-					});
-					
-					this.addEventListener("google-youtube-state-change", function() {
-						if (this.$.youtube.state == 1) {
-							this.state = STATE_KARA_PLAYING;
-						} else if (this.$.youtube.state == 2) {
-							if (Math.abs(this.$.youtube.duration - this.$.youtube.currenttime) > 1)
-								this.state = STATE_KARA_PAUSED;
-						} else if (this.$.youtube.state == 0) {
-							this.state = STATE_KARA_ENDED;
-						}
-					});
+
+					this._player = this._getPlayer();
+
+					switch (this._player.playerType) {
+						
+						case "youtube":
+							
+							this.addEventListener("google-youtube-ready", function() {
+								this.async(function() {
+									this._karaReadyLevel++;
+								});
+							});
+
+							this.addEventListener("google-youtube-state-change", function() {
+								switch (this._player.getState()) {
+									case 1:
+										this.state = STATE_KARA_PLAYING;
+										break;
+									case 2:
+										if (Math.abs(this._player.getDuration() - this._player.getCurrentPlayTime()) > 1)
+											this.state = STATE_KARA_PAUSED;
+										break;
+									case 0:
+										this.state = STATE_KARA_ENDED;
+										break;
+								}
+							});
+							
+							break;
+							
+						case "audio":
+							
+							this.addEventListener("canplay", function() {
+								this.async(function() {
+									this._karaReadyLevel++;
+								});
+							});
+							
+							this.addEventListener("play", function() {
+								this.state = STATE_KARA_PLAYING;
+							});
+							
+							this.addEventListener("pause", function() {
+								if (Math.abs(this._player.getDuration() - this._player.getCurrentPlayTime()) > 1)
+									this.state = STATE_KARA_PAUSED;
+							});
+							
+							this.addEventListener("ended", function() {
+								this.state = STATE_KARA_ENDED;
+							});
+							
+							break;
+							
+					}
 				}
-				
+
 				/* ====================== */
-				
+
 			});
 		})();
 	</script>

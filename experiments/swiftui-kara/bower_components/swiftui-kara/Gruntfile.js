@@ -9,34 +9,30 @@ module.exports = function(grunt) {
 				}
 			}
 		},
-		'gh-pages': {
-			options: {
-				clone: 'bower_components/my-repo'
-			},
-			src: [
-				'bower_components/**/*',
-				'!bower_components/my-repo/**/*',
-				'demo/*', 'src/*', 'index.html'
-			]
-		},
 		'replace': {
-			example: {
-				src: ['src/*'],
-				dest: 'dist/',
+			src: {
+				src: ['*.html'],
+				dest: './',
 				replacements: [{
 					from: 'bower_components',
 					to: '..'
+				}]
+			},
+			demo: {
+				src: 'demo/index.html',
+				dest: 'demo/',
+				replacements: [{
+					from: '../swiftui-kara.html',
+					to: '../bower_components/swiftui-kara/swiftui-kara.html'
 				}]
 			}
 		}
 	});
 
 	grunt.loadNpmTasks('grunt-contrib-connect');
-	grunt.loadNpmTasks('grunt-gh-pages');
 	grunt.loadNpmTasks('grunt-text-replace');
 
 	grunt.registerTask('build',  ['replace']);
-	grunt.registerTask('deploy', ['gh-pages']);
 	grunt.registerTask('server', ['connect']);
 
 };
