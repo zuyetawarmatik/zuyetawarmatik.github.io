@@ -3,6 +3,7 @@
 	<head>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		
 		<title>Zuyet Awarmatik's Portfolio</title>
 		
@@ -13,15 +14,16 @@
 		<link rel="shortcut icon" href="favicon.png" type="image/png">
 		<link rel="icon" href="favicon.png" type="image/png">
 		
-		<!-- Reset CSS -->
-		<link rel="stylesheet" href="dist/vendor/css/html5-boilerplate/normalize.css">
-		<link rel="stylesheet" href="dist/vendor/css/html5-boilerplate/main.css">
+		<!-- Vendor CSS -->
+		<link rel="stylesheet" href="bower_components/fullpage.js/jquery.fullPage.css">
+		<link rel="stylesheet" href="bower_components/perfect-scrollbar/min/perfect-scrollbar.min.css">
 		
 		<!-- Webfont -->
-		<link rel="stylesheet" href="dist/fonts/fonts.css">
-	
+		<script src="//use.edgefonts.net/league-gothic.js"></script>
+		<script src="//use.edgefonts.net/source-sans-pro:n3,i3,n4,i4,n6,i6,n7,i7.js"></script>
+
 		<!-- Main CSS -->
-		<link rel="stylesheet" href="dist/css/app.css">
+		<link rel="stylesheet" href="dist/css/index.css">
 		
 		<script>
 			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -33,34 +35,62 @@
 			ga('send', 'pageview');
 		</script>
 	</head>
-	<body ng-controller="MainController" ng-class="pageId" touch-action="auto" port-background ng-cloak>
-		<div id="wrapper">
-			<nav ng-controller="MenuController" id="menu">
-				<ul>
-					<li ng-repeat="menuItem in menuItems" id="{{menuItem.id}}" ng-class="{selected: pageId==menuItem.id}">
-						<a ng-href="#/{{menuItem.id}}" ng-click="setSelectedItem(menuItem.id)">{{menuItem.caption}}</a>
-					</li>
-				</ul>
-			</nav>
-			<div id="copyright">
-				<span ng-controller="SocialLinkController">Zuyet Awarmatik 2014.
-					<a ng-repeat="link in links" ng-href="{{link.href}}" class="fa" ng-class="link.icon" target="_blank"></a>
-				</span>
-			</div>
-			<div id="view-wrapper">
-				<div id="view" ng-view ng-class="pageId"></div>
-			</div>
-			<div id="acknowledge">
-				Built with AngularJS.
-			</div>
+	<body data-page="intro">
+		<header id="menu">
+			<ul class="well">
+				<li data-menuanchor="intro" class="active"><a href="#intro">Introduction</a></li>
+				<li data-menuanchor="portfolio"><a href="#portfolio">Portfolio</a></li>
+				<li data-menuanchor="experiments"><a href="#experiments">Experiments</a></li>
+				<li data-menuanchor="contacts"><a href="#contacts">Contacts</a></li>
+			</ul>
+		</header>
+		
+		<div class="background">
+			<div id="intro"></div>
+			<div id="portfolio"></div>
+			<div id="experiments"></div>
+			<div id="contacts"></div>
 		</div>
-						
-		<script src="dist/vendor/js/modernizr-2.6.2.min.js"></script>
-		<script src="dist/vendor/js/angular.min.js"></script>
-		<script src="dist/vendor/js/angular-route.min.js"></script>
-		<script src="dist/vendor/js/angular-animate.min.js"></script>
-		<script src="dist/vendor/js/svg.min.js"></script>
-		<script src="dist/vendor/js/jquery.min.js"></script>
+		
+		<section class="full-page">
+			<div class="section" data-anchor="intro">
+				<div class="container-fluid">
+					<h1>
+						Good day! I'm Zuyet.
+					</h1>
+					<p>
+						It's my love to clean some tiny mess in the world and make it hassle-free.
+					</p>
+					<p>
+						<em>P.S.: I'm an UI/UX designer and developer.</em>
+					</p>
+				</div>
+			</div>
+			<div class="section" data-anchor="portfolio"></div>
+			<div class="section" data-anchor="experiments"></div>
+			<div class="section" data-anchor="contacts">
+				<div class="container-fluid">
+					<div class="row">
+						<div class="col-sm-10 col-sm-offset-1 show">
+							<div class="description">
+								<h1><img src="dist/img/logo.png"> : Never miss any chance to cheer with me.</h1>
+								<p>Feel free to contact me to discuss everything from UI/UX, career or even sciences and hobbies.</p>
+								<a href="https://www.behance.net/zuyetawarmatik" target="_blank" class="btn emboss">Behance</a>
+								<a href="http://zuyetawarmatik.deviantart.com" target="_blank" class="btn emboss">DeviantArt</a>
+								<a href="https://www.linkedin.com/pub/bui-phuc-duyet/34/224/649" target="_blank" class="btn emboss">LinkedIn</a>
+								<a href="http://zuyetawarmatik.github.io" target="_blank" class="btn emboss">Github</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+		
+		<script src="bower_components/jquery/dist/jquery.min.js"></script>
+		<script src="bower_components/fullpage.js/vendors/jquery.easings.min.js"></script>
+		<script src="bower_components/fullpage.js/vendors/jquery.slimscroll.min.js"></script>
+		<script src="bower_components/fullpage.js/jquery.fullPage.min.js"></script>
+		<script src="bower_components/perfect-scrollbar/min/perfect-scrollbar.min.js"></script>
 		
 		<script src="dist/js/app.js"></script>
 	</body>
