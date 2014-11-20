@@ -11,7 +11,7 @@
 			}
 		</style>
 		<template if="{{audioSrcType=='youtube'}}">
-			<google-youtube id="youtube" videoid="{{audioSrc}}" height="0px" width="0px" chromeless="true"></google-youtube>
+			<google-youtube id="youtube" height="0px" width="0px" chromeless="true"></google-youtube>
 		</template>
 		<template if="{{audioSrcType=='audio'}}">
 			<audio id="audio" preload="auto"></audio>
@@ -49,18 +49,18 @@
 						this.fire("kara-not-ready");
 					} else if (this.state == STATE_KARA_READY) {
 						this._calculateTime();
-						this._seekReset();
+						this._seekLyricsToStart();
 						this.fire("kara-ready");
 					} else if (this.state == STATE_KARA_PLAYING) {
-						this._playTimer();
+						this._playLyricsTimer();
 						this.fire("kara-playing");
 					} else if (this.state == STATE_KARA_PAUSED) {
-						this._cancelPlayTimer();
-						this._pauseJobs();
+						this._cancelPlayLyricsTimer();
+						this._pauseLyrics();
 						this.fire("kara-paused");
 					} else if (this.state == STATE_KARA_ENDED) {
-						this._cancelPlayTimer();
-						this._endJobs();
+						this._cancelPlayLyricsTimer();
+						this._endLyrics();
 						this.fire("kara-ended");
 					}
 				},
@@ -94,25 +94,33 @@
 					return this._player.getCurrentPlayTimeInS();
 				},
 
-				getDurationInS: function() {
+				getOriginalDurationInS: function() {
 					return this._player.getDurationInS();
 				},
 				
+				getDurationInS: function() {
+					return this.getEndAtTimeInS() - this.getStartAtTimeInS();
+				},
+				
 				getStartAtTimeInS: function() {
-					return this.startAtTime / 1000;
+					return this.startAtTime.toS();
 				},
 				
 				getEndAtTimeInS: function() {
-					return this.endAtTime / 1000;
+					return this.endAtTime.toS();
 				},
 				
 				/* milliseconds */
-				getCurrentPlayTimeInMS: function() {
-					return ~~(this.getCurrentPlayTimeInS() * 1000);
+				_getCurrentPlayTimeInMS: function() {
+					return this.getCurrentPlayTimeInS().toMS();
 				},
 
-				getDurationInMS: function() {
-					return ~~(this.getDurationInS() * 1000);
+				_getOriginalDurationInMS: function() {
+					return this.getOriginalDurationInS().toMS();
+				},
+				
+				_getEndAtTimeInMS: function() {
+					return this.getEndAtTimeInS().toMS();
 				},
 
 				/* ====================== */
@@ -150,6 +158,10 @@
 								};
 
 								this.getDurationInS = function() {
+									/* This is a dirty fix to comply with google-youtube:
+									/* google-youtube only exposes duration when its state = 1 (playing) */
+									if (youtube.state != 1)
+										return youtube.player.getDuration();
 									return youtube.duration;
 								};
 
@@ -194,20 +206,46 @@
 
 				/* Controlling functions */
 				/* ====================== */
+				
+				/* Such public functions, pause() and play() are in fact
+				/* acting only on the player, but not the lyrics.
+				/* After the player is paused or played, it will trigger an event
+				/* which causes the lyrics to pause or play using private functions
+				/* such as _pauseLyrics() or _playLyricsTimer() */
 
 				pause: function() {
-					this._player.pause();
+					if (this.state == STATE_KARA_PLAYING)
+						this._player.pause();
 				},
 
 				play: function() {
-					this._player.seekToS(this._currentTime / 1000);
-					this._player.play();
+					if (this.state == STATE_KARA_READY || this.state == STATE_KARA_PAUSED || this.state == STATE_KARA_ENDED) {
+						this._player.seekToS(this._currentTime.toS());
+						this._player.play();
+					}
+				},
+				
+				seek: function(s) {
+					if (this.state != STATE_KARA_NOT_READY) {
+						var oldState = this.state;
+
+						if (oldState == STATE_KARA_PLAYING)
+							this._player.pause();
+					
+						this._clearLyrics();
+						this._seekLyricsToMS(s.toMS());
+						
+						if (oldState == STATE_KARA_PLAYING) {
+							this._player.seekToS(this._currentTime.toS());
+							this._player.play();
+						}
+					}
 				},
 				
 				_calculateStartAtTime: function() {
 					if (this.startAt != "0:0:0") {
 						var startAtInMS = getMilliseconds(this.startAt);
-						if (startAtInMS <= this.getDurationInMS()) {
+						if (startAtInMS <= this._getOriginalDurationInMS()) {
 							this.startAtTime = startAtInMS;
 							return;
 						}
@@ -218,12 +256,12 @@
 				_calculateEndAtTime: function() {
 					if (this.endAt != "0:0:0") {
 						var endAtInMS = getMilliseconds(this.endAt);
-						if (endAtInMS <= this.getDurationInMS()) {
+						if (endAtInMS <= this._getOriginalDurationInMS()) {
 							this.endAtTime = endAtInMS;
 							return;
 						}
 					}
-					this.endAtTime = this.getDurationInMS();
+					this.endAtTime = this._getOriginalDurationInMS();
 				},
 				
 				_calculateTime: function() {
@@ -231,13 +269,14 @@
 					this._calculateEndAtTime();
 					if (this.startAtTime > this.endAtTime) {
 						this.startAtTime = 0;
-						this.endAtTime = this.getDurationInMS();
+						this.endAtTime = this._getOriginalDurationInMS();
 						console.error("Error calculating times: startAt should be smaller than endAt");
 					}
 				},
 				
-				_seekToMS: function(ms) {
-					if (ms > this.getDurationInMS()) {
+				/* This function only affects lyrics' clock but not player's clock */
+				_seekLyricsToMS: function(ms) {
+					if (ms > this._getEndAtTimeInMS()) {
 						console.error("Error seeking");
 						return;
 					}
@@ -250,11 +289,7 @@
 					}
 				},
 				
-				_seekReset: function() {
-					this._seekToMS(this.startAtTime);
-				},
-
-				_pauseJobs: function() {
+				_pauseLyrics: function() {
 					var currentId = this._currentKaratextId;
 
 					/* Cancel children timers */
@@ -263,19 +298,25 @@
 					if (this._currentKaratextId >= 2)
 						this._childrenKaratext[currentId - 2].stop();
 
-					this._seekToMS(this._currentTime);
+					this._seekLyricsToMS(this._currentTime);
 				},
-				
-				_endJobs: function() {
+
+				_clearLyrics: function() {
 					for (var i = 0; i < this._childrenKaratext.length; i++)
 						this._childrenKaratext[i].reset();
-
-					this._seekReset();
+				},
+											
+				_seekLyricsToStart: function() {
+					this._seekLyricsToMS(this.startAtTime);
+				},
+				
+				_endLyrics: function() {
+					this._clearLyrics();
+					this._seekLyricsToStart();
 				},
 
-				_playTimer: function() {
+				_playLyricsTimer: function() {
 					this._timer = window.setInterval(function() {
-						
 						if (this._currentTime >= this.endAtTime)
 							this.pause();
 						
@@ -297,11 +338,11 @@
 							}
 						}
 
-						this._currentTime = this.getCurrentPlayTimeInMS();
+						this._currentTime = this._getCurrentPlayTimeInMS();
 					}.bind(this), this._timerInterval);
 				},
 
-				_cancelPlayTimer: function() {
+				_cancelPlayLyricsTimer: function() {
 					window.clearInterval(this._timer);
 				},
 
@@ -327,10 +368,10 @@
 				},
 
 				ready: function() {
-					/* Because we cannot bind input attribute directly to src of <audio>,
-					/* we need to bind it manually here */
 					if (this.audioSrcType == "audio")
 						this.$.audio.src = this.audioSrc;
+					else if (this.audioSrcType == "youtube")
+						this.$.youtube.videoid = this.audioSrc;
 					
 					this._numberOfKaratext = this.querySelectorAll("swiftui-karatext").length;
 					this._player = this._getPlayer();
